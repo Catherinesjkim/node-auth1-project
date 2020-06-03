@@ -1,13 +1,13 @@
 // custom session code with express-session
 const express = require("express")
 const bcrypt = require("bcryptjs")
-const Users = require("./users/users-model")
+const usersModel = require("./users/users-model")
 
 const router = express.Router()
 
 router.post("register", async (req, res, next) => {
   try {
-    const saved = await Users.add(req.body)
+    const saved = await usersModel.add(req.body)
 
     res.status(201).json(saved)
   } catch(err) {
@@ -18,7 +18,7 @@ router.post("register", async (req, res, next) => {
 router.post("/login", async (req, res, next) => {
   try {
     const { username, password } = req.body;
-    const user = await Users.findBy({ username }).first();
+    const user = await usersModel.findBy({ username }).first();
     // since bcrypt hashes generate different results due to the salting,
     // we rely on the magic internals to compare hashes (rather than doing
     // it manually by re-hashing and comparing)

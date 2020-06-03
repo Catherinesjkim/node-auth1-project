@@ -5,6 +5,17 @@
 const bcrypt = require("bcryptjs")
 const db = require("../database/config")
 
+function find() {
+  return db("users")
+    .select("id", "username")
+}
+
+function findBy(filter) {
+  return db("users")
+    .where(filter)
+    .select("id", "username", "password")
+}
+
 // bcryptjs will automatically hash our passwords
 // before a user gets inserted to our db, their password value will get hashed for us 
 async function add(user) {
@@ -12,25 +23,16 @@ async function add(user) {
 	// hash rounds is 2^14 === 16,384 rounds 
   user.password = await bcrypt.hash(user.password, 14)
 
-  const [id] = await db("users").insert(user)
+  const [id] = await db("users")
+    .insert(user)
+    
   return findById(id)
-}
-
-function find() {
-  return db("users").select("id", "username")
-}
-
-function findBy(filter) {
-  return db("usres")
-    .select("id", "username", "password")
-    .where(filter)
 }
 
 function findById(id) {
   return db("users")
-    .select("id", "username")
     .where({ id })
-    .first()
+    .first("id", "username")
 }
 
 module.exports = {
