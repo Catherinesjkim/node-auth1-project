@@ -5,23 +5,36 @@ const router = require("express").Router()
 
 const Users = require("../users/users-model") // to intecract with users db
 
-// endpoint /api/auth/register - worked on postman
-router.post("/register", (req, res) => {
+// endpoint /api/users
+router.get("/", (req, res) => {
+  Users.find()
+    .then((users) => {
+      res.status(200).json(users);
+    })
+    .catch((err) => {
+      res.status(500).json({ message: "error retrieving users", err });
+    });
+});
+
+
+// endpoint /auth/ - worked on postman
+router.post("/register", async (req, res) => {
   let user = req.body;
   const hash = bcrypt.hashSync(user.password, 8);
 
   user.password = hash;
   console.log(user);
-  Users.add(user)
-    .then((user) => {
-      res.status(201).json({ user });
-    })
-    .catch((err) => {
-      res.status(500).json({ message: "Error with registration", err });
-    });
+
+  try {
+    const newUser = await Users.add(user)
+    console.log(newUser)
+    res.status(201).json(newUser)
+  } catch(err) {
+     res.status(500).json({ message: "error from the server", err })
+  }
 });
 
-// endpoint /api/auth/login
+// endpoint /auth/ - worked on postman
 router.post("/login", (req, res) => {
   const { username, password } = req.body
 
@@ -38,6 +51,7 @@ router.post("/login", (req, res) => {
     }) 
 })
 
+// worked on postman
 router.get("/logout", (req, res) => {
     req.session.destroy((err) => {
       if(err) {

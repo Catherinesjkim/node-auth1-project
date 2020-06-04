@@ -18,17 +18,20 @@ function findBy(user) {
     .where(user);
 }
 
-
 async function add(user) {
+  try {
+  console.log("THIS", user)
   const [id] = await db("users")
     .insert(user, "id")
     
   return findById(id)
+  }catch(err) {
+    console.log("HERE", err)
+  }
 }
 
 function findById(id) {
   return db("users")
     .where({ id })
-    .select('id', 'username', 'password')
     .first()
 }

@@ -3,13 +3,13 @@ const helmet = require("helmet")
 const cors = require("cors")
 
 const session = require("express-session")
-const restricted = require("../middleware/restrict")
+const restricted = require("./middleware/restrict")
 const knexSessionStore = require("connect-session-knex")(session)
 
-const usersRouter = require("../users/users-router")
-const authRouter = require("../auth/auth-router")
+const usersRouter = require("./users/users-router")
+const authRouter = require("./auth/auth-router")
 
-const server = express();
+const server = express()
 
 const sessionConfig = {
   name: "user-session",
@@ -23,9 +23,9 @@ const sessionConfig = {
   saveUninitialized: false,
 
   store: new knexSessionStore({
-    knex: require("../database/config"),
+    knex: require("./database/config"),
     tablename: "sessions",
-    sidfilename: "sid",
+    sidfieldname: "sid",
     createtable: true,
     clearInterval: 3600 * 1000,
   }),
@@ -36,8 +36,8 @@ server.use(express.json())
 server.use(cors())
 server.use(session(sessionConfig))
 
-server.use("/api/users", usersRouter)
-server.use("/api/auth", authRouter)
+server.use("/users", restricted, usersRouter)
+server.use("/auth", authRouter)
 
 server.get("/", (req, res) => {
   res.json({ api: "API is up" })
