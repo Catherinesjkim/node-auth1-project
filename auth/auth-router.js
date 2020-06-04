@@ -1,60 +1,52 @@
-// custom session code with express-session
-const express = require("express")
+// custom session code with express-session - express router
 const bcrypt = require("bcryptjs")
-const usersModel = require("./users/users-model")
 
-const router = express.Router()
+const router = require("express").Router()
 
-router.post("register", async (req, res, next) => {
-  try {
-    const saved = await usersModel.add(req.body)
+const Users = require("../users/users-model") // to intecract with users db
 
-    res.status(201).json(saved)
-  } catch(err) {
-     next(err)
-  }
-})
+// endpoint /api/auth/register - worked on postman
+router.post("/register", (req, res) => {
+  let user = req.body;
+  const hash = bcrypt.hashSync(user.password, 8);
 
-router.post("/login", async (req, res, next) => {
-  try {
-    const { username, password } = req.body;
-    const user = await usersModel.findBy({ username }).first();
-    // since bcrypt hashes generate different results due to the salting,
-    // we rely on the magic internals to compare hashes (rather than doing
-    // it manually by re-hashing and comparing)
-    const passwordValid = await bcrypt.compare(password, user.password)
-
-    if (user && passwordValid) {
-      // stores the user data in the current session, 
-      // so it persists between requests
-      req.session.user = user // it's now available in other mw functions, anywhere if it comes after the mw chain
-      res.status(200).json({
-        message: `Welcome ${user.username}!`,
-      })
-    } else {
-      res.status(401).json({
-        message: "Invalid Credentials",
-      })
-    }
-  } catch (err) {
-      next(err)
-  }
-})
-
-router.get("/protect", async (req, res, next) => {
-  try {
-    if (!req.session || !req.session.user) {
-      return res.status(403).json({
-        message: "You are not authorized!",
-      })
-    }
-
-    res.json({
-      message: "You are authorized",
+  user.password = hash;
+  console.log(user);
+  Users.add(user)
+    .then((user) => {
+      res.status(201).json({ user });
     })
-  } catch (err) {
-     next(err)
-  }
+    .catch((err) => {
+      res.status(500).json({ message: "Error with registration", err });
+    });
+});
+
+// endpoint /api/auth/login
+router.post("/login", (req, res) => {
+  const { username, password } = req.body
+
+  Users.findBy({ username })
+    .then(([user]) => {
+      if (user && bcrypt.compareSync(password, user.password)) {
+        req.session.user = username
+        res.status(200).json({ message: `Welcome ${username}`})
+      } else {
+        res.status(401).json({ message: "Invalid Login" })
+      }
+    }).catch(err => {
+      res.status(500).json({ message: "Error logging in", err })
+    }) 
+})
+
+router.get("/logout", (req, res) => {
+    req.session.destroy((err) => {
+      if(err) {
+        res.send("Unable to logout")
+      } else {
+        res.send("You are now logged out")
+      }
+    }) 
 })
 
 module.exports = router
+
